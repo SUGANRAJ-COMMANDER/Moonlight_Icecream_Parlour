@@ -1,0 +1,59 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Moon Light Ice Cream Parlor</title>
+    <link rel="stylesheet" href="styleitems.css">
+    <style>
+        /* Only override colors on this page. Shared nav animation/position lives in styleitems.css */
+        body { background-color: #2E2E2E; color: #EFEFEF; }
+        .top-bar { background-color: #3D3D3D; color: #FFF; }
+        .title { font-size:24px; margin:0; flex:1; text-align:center; }
+        .main-wrapper { width:90%; max-width:980px; margin:24px auto; padding-top:10px; }
+        .seat-selection { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:18px; }
+        .seat { background:purple; color:#fff; height:110px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:bold; }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <button id="menuToggle" type="button" aria-expanded="false" aria-controls="drawer" aria-label="Open menu">☰</button>
+        <div class="title">Moon Light Ice Cream Parlor</div>
+    </div>
+
+    <div class="drawer" id="drawer">
+        <a href="index.html">Home</a>
+        <a href="salesSummary.html">Sales Summary</a>
+        <a href="#">About Us</a>
+    </div>
+
+    <div class="main-wrapper">
+        <div class="seat-selection">
+            <button class="seat" onclick="goToSeat('Seat 1')">Seat 1</button>
+            <button class="seat" onclick="goToSeat('Seat 2')">Seat 2</button>
+            <button class="seat" onclick="goToSeat('Seat 3')">Seat 3</button>
+            <button class="seat" onclick="goToSeat('Seat 4')">Seat 4</button>
+            <button class="seat" onclick="goToSeat('Seat 5')">Seat 5</button>
+            <button class="seat" onclick="goToSeat('Seat 6')">Seat 6</button>
+            <button class="seat" onclick="goToSeat('Seat 7')">Seat 7</button>
+            <button class="seat" onclick="goToSeat('Seat 8')">Seat 8</button>
+        </div>
+    </div>
+
+    <script>
+        function goToSeat(seatName) { window.location.href = `itemsList.html?seat=${encodeURIComponent(seatName)}`; }
+
+        // drawer toggle
+        (function () {
+            const drawer = document.getElementById('drawer');
+            const menuToggle = document.getElementById('menuToggle');
+            if (!drawer || !menuToggle) return;
+            menuToggle.addEventListener('click', (e) => { e.stopPropagation(); const isOpen = drawer.classList.toggle('open'); menuToggle.setAttribute('aria-expanded', String(isOpen)); });
+            document.addEventListener('click', () => { if (drawer.classList.contains('open')) { drawer.classList.remove('open'); menuToggle.setAttribute('aria-expanded', 'false'); } });
+            drawer.addEventListener('click', (e) => e.stopPropagation());
+        })();
+    </script>
+
+</body>
+</html>
