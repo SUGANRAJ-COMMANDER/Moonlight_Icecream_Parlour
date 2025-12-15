@@ -113,6 +113,12 @@ const itemPrices = {
     "Lemon mint": 100,
     "Strawberry mocktail": 100,
     "Watermelon": 100
+    // ensure keys matching button labels
+    ,"Hot choco brownie sundae": 199,
+    "Mini falooda": 120,
+    "Special mini falooda": 150,
+    "Chocolate falooda": 180,
+    "Special fruit falooda": 180
 };
 
 const cart = {};
