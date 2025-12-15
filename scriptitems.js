@@ -438,6 +438,7 @@ function showInlinePreview(items, total, dateStr, timeStr) {
     title.textContent = SHOP_INFO.name;
     title.style.textAlign = 'center';
     title.style.margin = '0 0 4px';
+    title.className = 'non-print';
     panel.appendChild(title);
 
     const dt = document.createElement('div');
@@ -448,6 +449,7 @@ function showInlinePreview(items, total, dateStr, timeStr) {
     panel.appendChild(dt);
 
     const hr = document.createElement('div'); hr.style.borderBottom = '1px dotted #000'; hr.style.margin = '8px 0'; panel.appendChild(hr);
+    hr.className = 'non-print';
 
     const table = document.createElement('table');
     table.style.width = '100%';
@@ -466,6 +468,18 @@ function showInlinePreview(items, total, dateStr, timeStr) {
     tfoot.innerHTML = `<tr><th colspan="2" style="padding:8px;text-align:left">TOTAL</th><th style="padding:8px;text-align:right">₹${total}</th></tr>`;
     table.appendChild(tfoot);
     panel.appendChild(table);
+    table.className = 'non-print';
+
+    // hidden preformatted print area (used when user prints the overlay)
+    const printPre = document.createElement('pre');
+    printPre.className = 'print-area';
+    printPre.style.display = 'none';
+    printPre.style.whiteSpace = 'pre';
+    printPre.style.fontFamily = 'monospace';
+    printPre.style.fontSize = '11px';
+    // populate with thermal text
+    printPre.textContent = buildBillText(items, total);
+    panel.appendChild(printPre);
 
     const btns = document.createElement('div');
     btns.style.display = 'flex';
@@ -506,6 +520,17 @@ function showInlinePreview(items, total, dateStr, timeStr) {
     closeBtn.onclick = () => { overlay.remove(); };
     btns.appendChild(printBtn); btns.appendChild(closeBtn);
     panel.appendChild(btns);
+
+    // print-specific CSS: hide visual preview and show the print-area when printing
+    const printStyle = document.createElement('style');
+    printStyle.textContent = `
+        @media print {
+            #inline-print-preview .non-print { display: none !important; }
+            #inline-print-preview .print-area { display: block !important; }
+            #inline-print-preview { position: static !important; }
+        }
+    `;
+    panel.appendChild(printStyle);
 
     overlay.appendChild(panel);
     document.body.appendChild(overlay);
