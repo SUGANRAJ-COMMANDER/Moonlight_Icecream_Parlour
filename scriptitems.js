@@ -517,7 +517,12 @@ function showInlinePreview(items, total, dateStr, timeStr) {
     closeBtn.textContent = 'Close';
     closeBtn.className = 'button-18';
     closeBtn.style.background = '#666';
-    closeBtn.onclick = () => { overlay.remove(); };
+    // remove preview and any installed handlers
+    closeBtn.onclick = () => {
+        window.removeEventListener('beforeprint', beforePrint);
+        window.removeEventListener('afterprint', afterPrint);
+        overlay.remove();
+    };
     btns.appendChild(printBtn); btns.appendChild(closeBtn);
     panel.appendChild(btns);
 
@@ -531,6 +536,31 @@ function showInlinePreview(items, total, dateStr, timeStr) {
         }
     `;
     panel.appendChild(printStyle);
+
+    // when user triggers browser Print (Ctrl+P), ensure only the thermal pre prints
+    function beforePrint() {
+        // save current content
+        if (!panel._savedHTML) panel._savedHTML = panel.innerHTML;
+        // replace with the print pre (visible)
+        panel.innerHTML = '';
+        const preClone = printPre.cloneNode(true);
+        preClone.style.display = 'block';
+        panel.appendChild(preClone);
+    }
+
+    function afterPrint() {
+        // restore original content
+        if (panel._savedHTML) {
+            panel.innerHTML = panel._savedHTML;
+            delete panel._savedHTML;
+        }
+        // re-attach listeners cleanup
+        window.removeEventListener('beforeprint', beforePrint);
+        window.removeEventListener('afterprint', afterPrint);
+    }
+
+    window.addEventListener('beforeprint', beforePrint);
+    window.addEventListener('afterprint', afterPrint);
 
     overlay.appendChild(panel);
     document.body.appendChild(overlay);
