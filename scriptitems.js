@@ -511,7 +511,7 @@ function showInlinePreview(items, total, dateStr, timeStr) {
         doc.close();
         printWin.focus();
         try { printWin.print(); } catch (e) { console.warn('Print failed', e); }
-        try { printWin.close(); } catch (e) {}
+        // Do not auto-close the print window — closing too early can cancel the print job.
     };
     const closeBtn = document.createElement('button');
     closeBtn.textContent = 'Close';
