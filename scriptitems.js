@@ -37,6 +37,13 @@ const itemPrices = {
     "Mini falooda - Vannila": 120,
     "Mini falooda - Strawberry": 120,
 
+    // Simplified category entries (single-button variants)
+    "Mini falooda - 120": 120,
+    "Special mini falooda - 150": 150,
+    "Chocolate falooda - 180": 180,
+    "Special fruit falooda - 180": 180,
+    "Hot choco brownie sundae - 199": 199,
+
     // Special mini falooda
     "Special mini falooda - Fruits": 150,
     "Special mini falooda - Strawberry": 150,
@@ -112,7 +119,7 @@ const cart = {};
 
 // Thermal printer settings
 const THERMAL_WIDTH = 40;
-const SHOP_INFO = { name: 'MOON LIGHT', location: 'Dindigul', contact: '7708946529' };
+const SHOP_INFO = { name: 'Moonlight Icecream Parlour', address: 'Trichy Road Dindigul', location: '', contact: '7708946529' };
 
 function formatLine(left, right = '', width = THERMAL_WIDTH) {
     left = String(left);
@@ -144,28 +151,39 @@ function buildBillText(items, total) {
     const dateOnly = now.toLocaleDateString();
     const timeOnly = now.toLocaleTimeString();
 
+    // column widths (chars)
+    const qtyW = 3; // e.g. ' 2'
+    const priceW = 8; // e.g. '₹9999.00'
+    const nameW = Math.max(10, width - qtyW - priceW - 2); // remaining for name
+
     let out = '';
-    // center shop name
-    const name = SHOP_INFO.name || '';
-    const pad = Math.max(0, Math.floor((width - name.length) / 2));
-    out += ' '.repeat(pad) + name + '\n';
+    // three centered header lines: name, address, location
+    function centerLine(text) {
+        if (!text) return '';
+        const pad = Math.max(0, Math.floor((width - text.length) / 2));
+        return ' '.repeat(pad) + text + '\n';
+    }
+    out += centerLine(SHOP_INFO.name || '');
+    out += centerLine(SHOP_INFO.address || '');
+    out += centerLine(SHOP_INFO.location || '');
+
     // date left, time right
-    out += formatLine('Date: ' + dateOnly, timeOnly) + '\n';
+    out += formatLine('Date: ' + dateOnly, 'Time: ' + timeOnly) + '\n';
     out += '-'.repeat(width) + '\n';
-    // header
-    const hdrLeft = 'Items';
-    const hdrMid = 'Count';
-    const hdrRight = 'Price';
-    // print a simple header row
-    out += formatLine(hdrLeft + ' ' + hdrMid, hdrRight) + '\n';
+
+    // header columns
+    const hdr = (('QTY'.padEnd(qtyW)) + ' ' + 'ITEM'.padEnd(nameW) + ' ' + 'PRICE'.padStart(priceW)).slice(0, width);
+    out += hdr + '\n';
     out += '-'.repeat(width) + '\n';
 
     items.forEach(i => {
-        const itemName = i.name.length > 20 ? i.name.slice(0, 20) + '…' : i.name;
-        const qtyStr = `x${i.qty}`;
+        const qtyStr = String(i.qty || '');
+        let itemName = i.name || '';
+        if (itemName.length > nameW) itemName = itemName.slice(0, nameW - 1) + '…';
         const priceStr = `₹${i.total}`;
-        // try to keep name on left and price on right; qty near name
-        out += formatLine(itemName + ' ' + qtyStr, priceStr) + '\n';
+        const left = qtyStr.padEnd(qtyW) + ' ' + itemName.padEnd(nameW);
+        const line = left + ' ' + priceStr.padStart(priceW);
+        out += line.slice(0, width) + '\n';
     });
 
     out += '-'.repeat(width) + '\n';
@@ -492,6 +510,8 @@ function printBill() {
     let printData = '';
 
     printData += `Moon Light Ice Cream Parlour\n`;
+    printData += `Trichy Road\n`;
+    printData += `Dindigul\n`;
     printData += `------------------------------\n`;
     printData += `Table: ${seatNumber}\n\n`;
 
