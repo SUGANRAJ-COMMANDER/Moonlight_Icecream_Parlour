@@ -186,14 +186,14 @@ function buildBillText(items, total) {
         const qtyStr = String(i.qty || '');
         let itemName = i.name || '';
         if (itemName.length > nameW) itemName = itemName.slice(0, nameW - 1) + '…';
-        const priceStr = `₹${i.total}`;
+        const priceStr = `Rs${i.total}`;
         const left = qtyStr.padEnd(qtyW) + ' ' + itemName.padEnd(nameW);
         const line = left + ' ' + priceStr.padStart(priceW);
         out += line.slice(0, width) + '\n';
     });
 
     out += '-'.repeat(width) + '\n';
-    out += formatLine('TOTAL', `₹${total}`) + '\n';
+    out += formatLine('TOTAL', `Rs${total}`) + '\n';
     out += '\nThank you!\n';
     return out;
 }
@@ -377,26 +377,41 @@ function openPrintWindow(items, total) {
         return null;
     }
     const doc = w.document;
+    // Print-friendly thermal CSS: set page width to ~80mm and use monospace
     doc.write(`<!doctype html><html><head><meta charset="utf-8"><title>Bill</title><style>
-        body{font-family:Arial,Helvetica,sans-serif;color:#000;padding:20px}
-        h1{text-align:center;margin:0 0 4px}
-        .datetime{text-align:center;font-size:12px;color:#333;margin-bottom:10px}
-        .sep{border-bottom:1px dotted #000;margin:8px 0}
-        table{width:100%;border-collapse:collapse}
-        th,td{padding:8px;text-align:left;border-bottom:1px solid #eee}
-        th{background:#f6f6f6}
-        .right{text-align:right}
+        @page { size: 80mm auto; margin: 4mm; }
+        html,body{margin:0;padding:0;font-family:monospace; color:#000;}
+        .wrapper{padding:6px; font-size:12px;}
+        h1{text-align:center;margin:0 0 2px;font-size:14px}
+        .datetime{text-align:center;font-size:10px;color:#000;margin-bottom:6px}
+        pre{font-family:monospace; white-space:pre; font-size:11px;}
+        .sep{border-bottom:1px dashed #000;margin:6px 0}
+        @media print { body { -webkit-print-color-adjust: exact; } }
     </style></head><body>`);
+    doc.write(`<div class="wrapper">`);
     doc.write(`<h1>${SHOP_INFO.name}</h1>`);
-    doc.write(`<div class="datetime">date: ${dateStr} &nbsp;&nbsp; time: ${timeStr}</div>`);
+    if (SHOP_INFO.address) doc.write(`<div class="datetime">${SHOP_INFO.address}</div>`);
+    if (SHOP_INFO.location) doc.write(`<div class="datetime">${SHOP_INFO.location}</div>`);
+    doc.write(`<div class="datetime">Date: ${dateStr}    Time: ${timeStr}</div>`);
     doc.write('<div class="sep"></div>');
-    doc.write('<table><thead><tr><th>Items</th><th class="right">Count</th><th class="right">Price</th></tr></thead><tbody>');
+    // build a monospace pre block for aligned columns
+    const width = THERMAL_WIDTH;
+    let pre = '';
+    pre += 'QTY'.padEnd(4) + 'ITEM'.padEnd(width - 12) + 'PRICE'.padStart(8) + '\n';
+    pre += '-'.repeat(width) + '\n';
     items.forEach(it => {
-        doc.write(`<tr><td>${it.name}</td><td class="right">${it.qty}</td><td class="right">₹${it.total}</td></tr>`);
+        const qty = String(it.qty || '');
+        let name = String(it.name || '');
+        if (name.length > (width - 14)) name = name.slice(0, width - 15) + '…';
+        const price = 'Rs' + String(it.total);
+        const line = qty.padEnd(4) + name.padEnd(width - 12) + price.padStart(8);
+        pre += line.slice(0, width) + '\n';
     });
-    doc.write(`</tbody><tfoot><tr><th colspan="2">TOTAL</th><th class="right">₹${total}</th></tr></tfoot></table>`);
-    doc.write('<div style="margin-top:16px;text-align:center">Thank you!</div>');
-    doc.write('</body></html>');
+    pre += '-'.repeat(width) + '\n';
+    pre += ('TOTAL'.padEnd(width - 8) + ('Rs' + total).padStart(8)) + '\n';
+    pre += '\nThank you!\n';
+    doc.write('<pre>' + pre + '</pre>');
+    doc.write('</div></body></html>');
     doc.close();
     w.focus();
     try { w.print(); } catch (e) { console.warn('Preview print failed', e); }
@@ -470,7 +485,33 @@ function showInlinePreview(items, total, dateStr, timeStr) {
     const printBtn = document.createElement('button');
     printBtn.textContent = 'Print';
     printBtn.className = 'button-18';
-    printBtn.onclick = () => { window.print(); };
+    printBtn.onclick = () => {
+        // open a dedicated small popup for printing (ensures page size and monospace)
+        const printWin = window.open('', '', 'width=400,height=800');
+        if (!printWin) {
+            alert('Popup blocked — allow popups to print or use the browser Print dialog.');
+            return;
+        }
+        const doc = printWin.document;
+        doc.write(`<!doctype html><html><head><meta charset="utf-8"><title>Bill</title><style>
+            @page { size: 80mm auto; margin: 4mm; }
+            html,body{margin:0;padding:0;font-family:monospace;color:#000}
+            .wrapper{padding:6px;font-size:12px}
+            pre{white-space:pre;font-family:monospace;font-size:11px}
+        </style></head><body><div class="wrapper">`);
+        // replicate header
+        doc.write('<h1 style="text-align:center;margin:0 0 2px">' + SHOP_INFO.name + '</h1>');
+        if (SHOP_INFO.address) doc.write('<div style="text-align:center;font-size:10px">' + SHOP_INFO.address + '</div>');
+        if (SHOP_INFO.location) doc.write('<div style="text-align:center;font-size:10px">' + SHOP_INFO.location + '</div>');
+        doc.write('<div style="text-align:center;font-size:10px">Date: ' + dateStr + '    Time: ' + timeStr + '</div>');
+        doc.write('<div style="border-bottom:1px dashed #000;margin:6px 0"></div>');
+        doc.write('<pre>' + panel.querySelector('table').outerHTML + '</pre>');
+        doc.write('</div></body></html>');
+        doc.close();
+        printWin.focus();
+        try { printWin.print(); } catch (e) { console.warn('Print failed', e); }
+        try { printWin.close(); } catch (e) {}
+    };
     const closeBtn = document.createElement('button');
     closeBtn.textContent = 'Close';
     closeBtn.className = 'button-18';
