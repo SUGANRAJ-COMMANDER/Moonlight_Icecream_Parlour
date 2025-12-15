@@ -158,17 +158,31 @@ function buildBillText(items, total) {
     const dateOnly = now.toLocaleDateString();
     const timeOnly = now.toLocaleTimeString();
 
-    // column widths (chars)
+    // column widths (chars) — single price column (per-line total)
     const qtyW = 3; // e.g. ' 2'
-    const priceW = 8; // e.g. '₹9999.00'
+    const priceW = 8; // price column (per-line total), e.g. '160.00'
     const nameW = Math.max(10, width - qtyW - priceW - 2); // remaining for name
 
     let out = '';
-    // Header and datetime are provided by the popup preview; omit here to avoid duplication
+    // add a few blank lines at top as cut-margin
+    out += '\n'.repeat(3);
+
+    // Centered header lines (shop name, address, optional location)
+    function centerLine(text) {
+        if (!text) return '';
+        const t = String(text);
+        const pad = Math.max(0, Math.floor((width - t.length) / 2));
+        return ' '.repeat(pad) + t + '\n';
+    }
+    out += centerLine(SHOP_INFO.name || '');
+    if (SHOP_INFO.address) out += centerLine(SHOP_INFO.address);
+    if (SHOP_INFO.location) out += centerLine(SHOP_INFO.location);
+    // date left, time right
+    out += formatLine('Date: ' + dateOnly, 'Time: ' + timeOnly) + '\n';
     out += '-'.repeat(width) + '\n';
 
-    // header columns
-    const hdr = (('QTY'.padEnd(qtyW)) + ' ' + 'ITEM'.padEnd(nameW) + ' ' + 'PRICE'.padStart(priceW)).slice(0, width);
+    // header columns: Qty, Item, Price
+    const hdr = (("QTY".padEnd(qtyW)) + ' ' + 'ITEM'.padEnd(nameW) + ' ' + 'PRICE'.padStart(priceW)).slice(0, width);
     out += hdr + '\n';
     out += '-'.repeat(width) + '\n';
 
@@ -176,15 +190,19 @@ function buildBillText(items, total) {
         const qtyStr = String(i.qty || '');
         let itemName = i.name || '';
         if (itemName.length > nameW) itemName = itemName.slice(0, nameW - 1) + '…';
-        const priceStr = `Rs${i.total}`;
+        const lineTotal = (typeof i.total === 'number') ? i.total : ((i.price || 0) * (i.qty || 0));
+        const totalStr = lineTotal.toFixed(2);
         const left = qtyStr.padEnd(qtyW) + ' ' + itemName.padEnd(nameW);
-        const line = left + ' ' + priceStr.padStart(priceW);
+        const line = left + ' ' + totalStr.padStart(priceW);
         out += line.slice(0, width) + '\n';
     });
 
     out += '-'.repeat(width) + '\n';
-    out += formatLine('TOTAL', `Rs${total}`) + '\n';
+    out += 'Total:\n';
+    out += formatLine('Total Payment:', total.toFixed(2)) + '\n';
     out += '\nThank you!\n';
+    // add trailing blank lines to leave space for cutting
+    out += '\n'.repeat(4);
     return out;
 }
 
@@ -379,12 +397,7 @@ function openPrintWindow(items, total) {
         @media print { body { -webkit-print-color-adjust: exact; } }
     </style></head><body>`);
     doc.write(`<div class="wrapper">`);
-    // Print shop header left-aligned (name, address, location) above date/time
-    if (SHOP_INFO.name) doc.write(`<div class="header">${SHOP_INFO.name}</div>`);
-    if (SHOP_INFO.address) doc.write(`<div class="datetime">${SHOP_INFO.address}</div>`);
-    if (SHOP_INFO.location) doc.write(`<div class="datetime">${SHOP_INFO.location}</div>`);
-    doc.write(`<div class="datetime">Date: ${dateStr}    Time: ${timeStr}</div>`);
-    doc.write('<div class="sep"></div>');
+    // header and datetime will be included inside the thermal <pre> (buildBillText)
     // Use the same thermal text generator so popup matches ESC/POS width
     const thermal = buildBillText(items, total);
     doc.write('<pre>' + thermal + '</pre>');
@@ -476,12 +489,7 @@ function showInlinePreview(items, total, dateStr, timeStr) {
             .wrapper{padding:6px;font-size:12px}
             pre{white-space:pre;font-family:monospace;font-size:11px}
         </style></head><body><div class="wrapper">`);
-        // replicate header
-        doc.write('<h1 style="text-align:center;margin:0 0 2px">' + SHOP_INFO.name + '</h1>');
-        if (SHOP_INFO.address) doc.write('<div style="text-align:center;font-size:10px">' + SHOP_INFO.address + '</div>');
-        if (SHOP_INFO.location) doc.write('<div style="text-align:center;font-size:10px">' + SHOP_INFO.location + '</div>');
-        doc.write('<div style="text-align:center;font-size:10px">Date: ' + dateStr + '    Time: ' + timeStr + '</div>');
-        doc.write('<div style="border-bottom:1px dashed #000;margin:6px 0"></div>');
+        // header and datetime are produced by buildBillText inside the <pre>
         // use buildBillText to create a thermal-friendly preformatted receipt
         const thermal = buildBillText(items, total);
         doc.write('<pre>' + thermal + '</pre>');
@@ -531,33 +539,17 @@ function printKOT() {
 // Function to print the bill
 function printBill() {
     disableButtons(true);
-
     let total = 0;
-    let printData = '';
-
-    printData += `Moon Light Ice Cream Parlour\n`;
-    printData += `Trichy Road\n`;
-    printData += `Dindigul\n`;
-    printData += `------------------------------\n`;
-    printData += `Table: ${seatNumber}\n\n`;
-
-    // collect current items
+    // collect current items for printing and saving (do not build a separate text block here)
     if (!Array.isArray(window._currentPrintItems)) window._currentPrintItems = [];
     window._currentPrintItems.length = 0;
-
     for (let item in cart) {
         const qty = cart[item];
         const price = itemPrices[item] || 0;
         const itemTotal = qty * price;
         total += itemTotal;
-        printData += `${item.padEnd(25)} x ${qty.toString().padStart(2)} - ₹${itemTotal.toString().padStart(4)}\n`;
         window._currentPrintItems.push({ name: item, qty: qty, price: price, total: itemTotal });
     }
-
-    printData += `------------------------------\n`;
-    printData += `Total: ₹${total}\n`;
-
-    const data = [{ type: 'TEXT', value: printData }];
 
     // Save transaction regardless of printer availability
     try {
