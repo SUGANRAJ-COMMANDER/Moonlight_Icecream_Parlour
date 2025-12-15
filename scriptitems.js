@@ -126,7 +126,7 @@ const cart = {};
 // Thermal printer settings
 // For 58mm (HOP-H58) receipts, ~32 characters per line is typical.
 const THERMAL_WIDTH = 32;
-const SHOP_INFO = { name: 'Moonlight Icecream Parlour', address: 'Trichy Road Dindigul', location: '', contact: '7708946529' };
+const SHOP_INFO = { name: '\nMoonlight Icecream Parlour', address: 'Trichy Road Dindigul', location: '', contact: '7708946529' };
 
 function formatLine(left, right = '', width = THERMAL_WIDTH) {
     left = String(left);
@@ -163,9 +163,9 @@ function buildBillText(items, total) {
     const priceW = 8; // price column (per-line total), e.g. '160.00'
     const nameW = Math.max(10, width - qtyW - priceW - 2); // remaining for name
 
-    let out = '';
+    let out = '\n';
     // add a few blank lines at top as cut-margin
-    out += '\n'.repeat(3);
+    out += '\n'.repeat(4);
 
     // Centered header lines (shop name, address, optional location)
     function centerLine(text) {
@@ -200,7 +200,7 @@ function buildBillText(items, total) {
     out += '-'.repeat(width) + '\n';
     out += 'Total:\n';
     out += formatLine('Total Payment:', total.toFixed(2)) + '\n';
-    out += '\nThank you!\n';
+    out += '\nThank you!\n\n\t\n';
     // add trailing blank lines to leave space for cutting
     out += '\n'.repeat(4);
     return out;
@@ -476,7 +476,7 @@ function showInlinePreview(items, total, dateStr, timeStr) {
     printPre.style.display = 'none';
     printPre.style.whiteSpace = 'pre';
     printPre.style.fontFamily = 'monospace';
-    printPre.style.fontSize = '11px';
+    printPre.style.fontSize = '10px';
     // populate with thermal text
     printPre.textContent = buildBillText(items, total);
     panel.appendChild(printPre);
