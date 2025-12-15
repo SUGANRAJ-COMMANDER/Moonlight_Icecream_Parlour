@@ -124,7 +124,8 @@ const itemPrices = {
 const cart = {};
 
 // Thermal printer settings
-const THERMAL_WIDTH = 40;
+// For 58mm (HOP-H58) receipts, ~32 characters per line is typical.
+const THERMAL_WIDTH = 32;
 const SHOP_INFO = { name: 'Moonlight Icecream Parlour', address: 'Trichy Road Dindigul', location: '', contact: '7708946529' };
 
 function formatLine(left, right = '', width = THERMAL_WIDTH) {
@@ -163,18 +164,7 @@ function buildBillText(items, total) {
     const nameW = Math.max(10, width - qtyW - priceW - 2); // remaining for name
 
     let out = '';
-    // three centered header lines: name, address, location
-    function centerLine(text) {
-        if (!text) return '';
-        const pad = Math.max(0, Math.floor((width - text.length) / 2));
-        return ' '.repeat(pad) + text + '\n';
-    }
-    out += centerLine(SHOP_INFO.name || '');
-    out += centerLine(SHOP_INFO.address || '');
-    out += centerLine(SHOP_INFO.location || '');
-
-    // date left, time right
-    out += formatLine('Date: ' + dateOnly, 'Time: ' + timeOnly) + '\n';
+    // Header and datetime are provided by the popup preview; omit here to avoid duplication
     out += '-'.repeat(width) + '\n';
 
     // header columns
@@ -377,40 +367,27 @@ function openPrintWindow(items, total) {
         return null;
     }
     const doc = w.document;
-    // Print-friendly thermal CSS: set page width to ~80mm and use monospace
+    // Print-friendly thermal CSS: set page width to 58mm and use monospace
     doc.write(`<!doctype html><html><head><meta charset="utf-8"><title>Bill</title><style>
-        @page { size: 80mm auto; margin: 4mm; }
+        @page { size: 58mm auto; margin: 4mm; }
         html,body{margin:0;padding:0;font-family:monospace; color:#000;}
         .wrapper{padding:6px; font-size:12px;}
-        h1{text-align:center;margin:0 0 2px;font-size:14px}
-        .datetime{text-align:center;font-size:10px;color:#000;margin-bottom:6px}
+        .header{font-weight:bold;margin:0 0 2px;font-size:14px}
+        .datetime{text-align:left;font-size:10px;color:#000;margin-bottom:6px}
         pre{font-family:monospace; white-space:pre; font-size:11px;}
         .sep{border-bottom:1px dashed #000;margin:6px 0}
         @media print { body { -webkit-print-color-adjust: exact; } }
     </style></head><body>`);
     doc.write(`<div class="wrapper">`);
-    doc.write(`<h1>${SHOP_INFO.name}</h1>`);
+    // Print shop header left-aligned (name, address, location) above date/time
+    if (SHOP_INFO.name) doc.write(`<div class="header">${SHOP_INFO.name}</div>`);
     if (SHOP_INFO.address) doc.write(`<div class="datetime">${SHOP_INFO.address}</div>`);
     if (SHOP_INFO.location) doc.write(`<div class="datetime">${SHOP_INFO.location}</div>`);
     doc.write(`<div class="datetime">Date: ${dateStr}    Time: ${timeStr}</div>`);
     doc.write('<div class="sep"></div>');
-    // build a monospace pre block for aligned columns
-    const width = THERMAL_WIDTH;
-    let pre = '';
-    pre += 'QTY'.padEnd(4) + 'ITEM'.padEnd(width - 12) + 'PRICE'.padStart(8) + '\n';
-    pre += '-'.repeat(width) + '\n';
-    items.forEach(it => {
-        const qty = String(it.qty || '');
-        let name = String(it.name || '');
-        if (name.length > (width - 14)) name = name.slice(0, width - 15) + '…';
-        const price = 'Rs' + String(it.total);
-        const line = qty.padEnd(4) + name.padEnd(width - 12) + price.padStart(8);
-        pre += line.slice(0, width) + '\n';
-    });
-    pre += '-'.repeat(width) + '\n';
-    pre += ('TOTAL'.padEnd(width - 8) + ('Rs' + total).padStart(8)) + '\n';
-    pre += '\nThank you!\n';
-    doc.write('<pre>' + pre + '</pre>');
+    // Use the same thermal text generator so popup matches ESC/POS width
+    const thermal = buildBillText(items, total);
+    doc.write('<pre>' + thermal + '</pre>');
     doc.write('</div></body></html>');
     doc.close();
     w.focus();
@@ -494,7 +471,7 @@ function showInlinePreview(items, total, dateStr, timeStr) {
         }
         const doc = printWin.document;
         doc.write(`<!doctype html><html><head><meta charset="utf-8"><title>Bill</title><style>
-            @page { size: 80mm auto; margin: 4mm; }
+            @page { size: 58mm auto; margin: 4mm; }
             html,body{margin:0;padding:0;font-family:monospace;color:#000}
             .wrapper{padding:6px;font-size:12px}
             pre{white-space:pre;font-family:monospace;font-size:11px}
@@ -505,7 +482,9 @@ function showInlinePreview(items, total, dateStr, timeStr) {
         if (SHOP_INFO.location) doc.write('<div style="text-align:center;font-size:10px">' + SHOP_INFO.location + '</div>');
         doc.write('<div style="text-align:center;font-size:10px">Date: ' + dateStr + '    Time: ' + timeStr + '</div>');
         doc.write('<div style="border-bottom:1px dashed #000;margin:6px 0"></div>');
-        doc.write('<pre>' + panel.querySelector('table').outerHTML + '</pre>');
+        // use buildBillText to create a thermal-friendly preformatted receipt
+        const thermal = buildBillText(items, total);
+        doc.write('<pre>' + thermal + '</pre>');
         doc.write('</div></body></html>');
         doc.close();
         printWin.focus();
