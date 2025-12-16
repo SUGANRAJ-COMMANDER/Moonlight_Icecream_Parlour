@@ -155,56 +155,51 @@ function buildKOTText(items) {
 function buildBillText(items, total) {
     const width = THERMAL_WIDTH;
     const now = new Date();
-    const dateOnly = now.toLocaleDateString();
-    const timeOnly = now.toLocaleTimeString();
 
-    // column widths (chars) — single price column (per-line total)
-    const qtyW = 3; // e.g. ' 2'
-    const priceW = 8; // price column (per-line total), e.g. '160.00'
-    const nameW = Math.max(10, width - qtyW - priceW - 2); // remaining for name
+    const qtyW = 3;
+    const priceW = 8;
+    const nameW = Math.max(10, width - qtyW - priceW - 2);
 
-    let out = '\n';
-    // add a few blank lines at top as cut-margin
-    out += '\n'.repeat(4);
+    let out = '\n'.repeat(4);
 
-    // Centered header lines (shop name, address, optional location)
     function centerLine(text) {
-        if (!text) return '';
-        const t = String(text);
-        const pad = Math.max(0, Math.floor((width - t.length) / 2));
-        return ' '.repeat(pad) + t + '\n';
+        const pad = Math.max(0, Math.floor((width - text.length) / 2));
+        return ' '.repeat(pad) + text + '\n';
     }
+
     out += centerLine(SHOP_INFO.name || '');
     if (SHOP_INFO.address) out += centerLine(SHOP_INFO.address);
     if (SHOP_INFO.location) out += centerLine(SHOP_INFO.location);
-    // date left, time right
-    out += formatLine('Date: ' + dateOnly, 'Time: ' + timeOnly) + '\n';
-    out += '-'.repeat(width) + '\n';
 
-    // header columns: Qty, Item, Price
-    const hdr = (("QTY".padEnd(qtyW)) + ' ' + 'ITEM'.padEnd(nameW) + ' ' + 'PRICE'.padStart(priceW)).slice(0, width);
-    out += hdr + '\n';
+    out += formatLine(
+        'Date: ' + now.toLocaleDateString(),
+        'Time: ' + now.toLocaleTimeString()
+    ) + '\n';
+
+    out += '-'.repeat(width) + '\n';
+    out += 'QTY ITEM'.padEnd(width - 8) + 'PRICE\n';
     out += '-'.repeat(width) + '\n';
 
     items.forEach(i => {
-        const qtyStr = String(i.qty || '');
-        let itemName = i.name || '';
-        if (itemName.length > nameW) itemName = itemName.slice(0, nameW - 1) + '…';
-        const lineTotal = (typeof i.total === 'number') ? i.total : ((i.price || 0) * (i.qty || 0));
-        const totalStr = lineTotal.toFixed(2);
-        const left = qtyStr.padEnd(qtyW) + ' ' + itemName.padEnd(nameW);
-        const line = left + ' ' + totalStr.padStart(priceW);
-        out += line.slice(0, width) + '\n';
+        let name = i.name.length > nameW ? i.name.slice(0, nameW - 1) + '…' : i.name;
+        const line = 
+            String(i.qty).padEnd(qtyW) + ' ' +
+            name.padEnd(nameW) + ' ' +
+            (i.total).toFixed(2).padStart(priceW);
+        out += line + '\n';
     });
 
     out += '-'.repeat(width) + '\n';
-    out += 'Total:\n';
-    out += formatLine('Total Payment:', total.toFixed(2)) + '\n';
-    out += '\nThank you!\n\n\t\n';
-    // add trailing blank lines to leave space for cutting
-    out += '\n'.repeat(4);
+    out += formatLine('TOTAL AMOUNT', total.toFixed(2)) + '\n';
+    out += '-'.repeat(width) + '\n';
+    out += centerLine('THANK YOU');
+
+    // 🔥 CRITICAL PART
+    out += '\n'.repeat(10);
+
     return out;
 }
+
 
 // Ensure QZ Tray websocket is connected (auto-connect). Resolves when connected or rejects on timeout/error.
 function ensureQzConnected(timeout = 5000) {
