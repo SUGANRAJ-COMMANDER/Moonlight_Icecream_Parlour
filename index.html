@@ -12,7 +12,13 @@
         .title { font-size:24px; margin:0; flex:1; text-align:center; }
         .main-wrapper { width:90%; max-width:980px; margin:24px auto; padding-top:10px; }
         .seat-selection { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:18px; }
-        .seat { background:purple; color:#fff; height:110px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:bold; }
+        .seat { background:rgb(57, 101, 213); 
+            color:#fff; height:110px; border-radius:8px; 
+            display:flex; align-items:center; 
+            justify-content:center;
+            font-size:18px; cursor:pointer;
+            font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+         }
     </style>
 </head>
 <body>
@@ -25,11 +31,14 @@
     <div class="drawer" id="drawer">
         <a href="index.html">Home</a>
         <a href="salesSummary.html">Sales Summary</a>
-        <a href="#">About Us</a>
+        <a href="about.html">About Us</a>
     </div>
 
     <div class="main-wrapper">
+        <br>
+        <br><br><br>
         <div class="seat-selection">
+            
             <button class="seat" onclick="goToSeat('Seat 1')">Seat 1</button>
             <button class="seat" onclick="goToSeat('Seat 2')">Seat 2</button>
             <button class="seat" onclick="goToSeat('Seat 3')">Seat 3</button>
@@ -38,6 +47,12 @@
             <button class="seat" onclick="goToSeat('Seat 6')">Seat 6</button>
             <button class="seat" onclick="goToSeat('Seat 7')">Seat 7</button>
             <button class="seat" onclick="goToSeat('Seat 8')">Seat 8</button>
+            <button class="seat" onclick="goToSeat('Seat 9')">Seat 9</button>
+            <button class="seat" onclick="goToSeat('Seat 10')">Seat 10</button>
+            <button class="seat" onclick="goToSeat('Seat 11')">Seat 11</button>
+            <button class="seat" onclick="goToSeat('Seat 12')">Seat 12</button>
+            <button class="seat" onclick="goToSeat('Seat 13')">Seat 13</button>
+            <button class="seat" onclick="goToSeat('Seat 14')">Seat 14</button>
         </div>
     </div>
 
