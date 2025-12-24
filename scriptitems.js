@@ -192,13 +192,16 @@ function buildBillText(items, total) {
     out += '-'.repeat(width) + '\n';
     out += formatLine('TOTAL AMOUNT', total.toFixed(2)) + '\n';
     out += '-'.repeat(width) + '\n';
-    out += centerLine('THANK YOU');
 
-    // 🔥 CRITICAL PART
-    out += '\n'.repeat(10);
-    out += ".....";
+    out += centerLine('THANK YOU') + '\n';
+    out += centerLine('Fresh Scoops Made with Love') + '\n';
+    out += centerLine('Visit Again') + '\n';
+
+/* 🔥 MUST HAVE — paper feed to clear printer buffer */
+    out += '\n'.repeat(12);
 
     return out;
+
 }
 
 
@@ -383,7 +386,7 @@ function openPrintWindow(items, total) {
     const doc = w.document;
     // Print-friendly thermal CSS: set page width to 58mm and use monospace
     doc.write(`<!doctype html><html><head><meta charset="utf-8"><title>Bill</title><style>
-        @page { size: 58mm auto; margin: 4mm; }
+        @page { size: 58mm 400mm; margin: 4mm; }
         html,body{margin:0;padding:0;font-family:monospace; color:#000;}
         .wrapper{padding:6px; font-size:12px;}
         .header{font-weight:bold;margin:0 0 2px;font-size:14px}
