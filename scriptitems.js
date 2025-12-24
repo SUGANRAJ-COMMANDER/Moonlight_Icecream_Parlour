@@ -195,7 +195,7 @@ function buildBillText(items, total) {
 
     out += centerLine('THANK YOU') + '\n';
 
-    out += '......\n'.repeat(12);
+    out += '\n'.repeat(12);
 
     return out;
 
