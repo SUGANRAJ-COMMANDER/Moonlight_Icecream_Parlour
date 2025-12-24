@@ -198,7 +198,7 @@ function buildBillText(items, total) {
     out += centerLine('Visit Again') + '\n';
 
 /* 🔥 MUST HAVE — paper feed to clear printer buffer */
-    out += '\n'.repeat(12);
+    out += '......\n'.repeat(12);
 
     return out;
 
