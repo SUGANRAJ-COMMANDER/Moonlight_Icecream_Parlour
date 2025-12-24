@@ -160,7 +160,7 @@ function buildBillText(items, total) {
     const priceW = 8;
     const nameW = Math.max(10, width - qtyW - priceW - 2);
 
-    let out = '\n'.repeat(4);
+    let out = '\n'.repeat(2);
 
     function centerLine(text) {
         const pad = Math.max(0, Math.floor((width - text.length) / 2));
@@ -196,6 +196,7 @@ function buildBillText(items, total) {
 
     // 🔥 CRITICAL PART
     out += '\n'.repeat(10);
+    out += ".....";
 
     return out;
 }
