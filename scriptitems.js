@@ -194,7 +194,7 @@ function buildBillText(items, total) {
     out += '-'.repeat(width) + '\n';
 
     out += centerLine('THANK YOU') + '\n';
-    out += centerLine('Fresh Scoops Made with Love') + '\n';
+    out += centerLine('_') + '\n';
     out += centerLine('Visit Again') + '\n';
 
 /* 🔥 MUST HAVE — paper feed to clear printer buffer */
